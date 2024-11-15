@@ -1,0 +1,30 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities; 
+.chat-box {
+  width: 100%;
+  border: 1px solid #ccc;
+  padding: 10px;
+  height: 300px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+ 
+.send{
+  padding: 5px 15px;
+  margin: 5px;
+  border-radius: 5px;
+  max-width: 70%;    
+  border-top-right-radius: 0px;
+}
+
+.recieve{
+  padding: 4px 12px;
+  margin: 5px;
+  border-radius: 5px;
+  max-width: 70%;    
+  border-top-left-radius: 0px;
+}
+ 

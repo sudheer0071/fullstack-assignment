@@ -1,0 +1,103 @@
+  
+
+/* Containers */
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+
+.containers {
+  max-width: 1480px;
+  margin: 0 auto;
+  padding: 1.5rem; 
+} 
+/* Target the entire scrollbar */
+::-webkit-scrollbar {
+  width: 5px; /* Set the scrollbar width */
+}
+
+/* Style the scrollbar track */
+::-webkit-scrollbar-track {
+  background: transparent; /* Track color */
+  border-radius: 10px; /* Round the track edges */
+}
+
+/* Style the scrollbar thumb */
+::-webkit-scrollbar-thumb {
+  background-color: #ddd9d9; /* Scrollbar color */
+  border-radius: 10px; /* Round the scrollbar edges */
+}
+
+/* Change color when hovering over the scrollbar */
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgb(199, 197, 197);
+}
+
+/* Remove the scrollbar arrows */
+::-webkit-scrollbar-button {
+  display: none;
+}
+
+/* loader */
+
+.lds-ellipsis div {
+  position: absolute;  
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  animation-timing-function: cubic-bezier(0, 1, 1, 0);
+}
+
+.lds-ellipsis div:nth-child(1) {
+  left: 8px;
+  animation: lds-ellipsis1 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(2) {
+  left: 8px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(3) {
+  left: 32px;
+  animation: lds-ellipsis2 0.6s infinite;
+}
+
+.lds-ellipsis div:nth-child(4) {
+  left: 56px;
+  animation: lds-ellipsis3 0.6s infinite;
+}
+
+@keyframes lds-ellipsis1 {
+  0% {
+    transform: scale(0);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes lds-ellipsis3 {
+  0% {
+    transform: scale(1);
+  }
+
+  100% {
+    transform: scale(0);
+  }
+}
+
+@keyframes lds-ellipsis2 {
+  0% {
+    transform: translate(0, 0);
+  }
+
+  100% {
+    transform: translate(24px, 0);
+  }
+}
+ 
