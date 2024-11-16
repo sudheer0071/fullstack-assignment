@@ -4,8 +4,9 @@ import { io, Socket } from 'socket.io-client';
 import {ChatSvgSend} from '../../../../public/ChatSvgSend'
 import {ChatSvgRecieve} from '../../../../public/ChatSvgRecieve'
 import {EllipsisVertical, Send} from 'lucide-react'
-import { messageState, selectedUserState } from '../../../lib/atoms';
+import { messageState, onlineUserState, selectedUserState } from '../../../lib/atoms';
 import { useRecoilState } from 'recoil';
+import { useRouteError } from 'react-router-dom';
 
 
 type User = {
@@ -32,47 +33,43 @@ interface onlineUsersProp{
 
 const socket: Socket = io('http://localhost:3001'); 
 
-export const RightSection = ({currentUserId,onlineUsers}:{currentUserId:string,onlineUsers:onlineUsersProp[]} , ) => {
-  const [selectedUser,setSelectedUser] = useRecoilState <User>(selectedUserState);  
-  const [messages, setMessages] = useRecoilState<Message[]>(messageState);
-  const [input, setInput] = useState<string>(''); 
- 
+export const RightSection = ({
+  currentUserId,
+  onlineUsers,
+  messages // Add this prop
+}: {
+  currentUserId: string,
+  onlineUsers: onlineUsersProp[],
+  messages: Message[] // Add this type
+}) => {
+  const [selectedUser, setSelectedUser] = useRecoilState<User>(selectedUserState);
+  // Remove the global messages state since we'll use the prop
+  const [input, setInput] = useState<string>('');
+
   const formatTime = () => {
     const now = new Date();
     const hours = now.getHours();
     const minutes = now.getMinutes();
     const ampm = hours >= 12 ? 'pm' : 'am';
-    const formattedHours = hours % 12 || 12; // 12-hour format
-    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes; // leading zero for minutes
-  
+    const formattedHours = hours % 12 || 12;
+    const formattedMinutes = minutes < 10 ? `0${minutes}` : minutes;
     return `${formattedHours}:${formattedMinutes} ${ampm}`;
   };
-  
-  socket.on('receive-message', (data) => {
-    console.log("Received message:", data);
-    setMessages((prevMessages) => [...prevMessages, data]);
-  });
- 
+
   const sendMessage = () => {
     if (selectedUser && input.trim()) {
-       
       const messageData = {
         text: input,
         senderId: currentUserId,
         recipientId: selectedUser.id,
       };
 
-      // Emit the message to the server
       socket.emit('send-message', messageData);
-
-      // Update the local message list to show the sent message
-      setMessages((prevMessages:any) => [...prevMessages, messageData]);
-      
-      setInput(''); // Clear input
+      setInput('');
     }
   };
 
-  const online = onlineUsers.some((onlineUser)=> onlineUser.id == selectedUser.id)
+  const online = onlineUsers.some((onlineUser) => onlineUser.id === selectedUser?.id);
 
 
   return (
@@ -97,7 +94,7 @@ export const RightSection = ({currentUserId,onlineUsers}:{currentUserId:string,o
         </div> 
       <div className=" relative flex-grow flex-shrink basis-0 h-[90%] rounded-md p-2  overflow-y-auto pb-12">
         <div className=' space-y-3 mb-5'>
-        {messages.map((msg, index) =>online && (
+        {messages.map((msg, index) => online &&  (
           msg.senderId == currentUserId  ?
           <div className=' relative '>  
               <span className=' absolute right-0 top-[5px]  '>
@@ -154,7 +151,7 @@ export const RightSection = ({currentUserId,onlineUsers}:{currentUserId:string,o
         />
         </div>
         <div >
-      <button onClick={sendMessage} className= 'group bg-primary rounded-[20px] p-[12px] border-2 shadow-md'> <Send className=' text-white transition-all duration-300 group-hover:rotate-45 ' /> </button>
+      <button onClick={()=>sendMessage()} className= 'group bg-primary rounded-[20px] p-[12px] border-2 shadow-md'> <Send className=' text-white transition-all duration-300 group-hover:rotate-45 ' /> </button>
         </div>
       </div>
       </div>

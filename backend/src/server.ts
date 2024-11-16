@@ -59,26 +59,30 @@ io.on('connection', (socket) => {
       console.log('Online Users:', onlineUsers);
       io.emit('online-users', Object.values(onlineUsers)); // Send updated list to all clients
     }
-  });
+  }); 
 
   socket.on('subscribe-to-chat', (recipientId: string, currentUserId:string) => {
-    const topic = `/chat/${currentUserId}-${recipientId}`;
-    socket.join(topic); // Join the room corresponding to the conversation
+    const participants = [currentUserId, recipientId].sort();
+     const topic = `/chat/${participants[0]}-${participants[1]}`;
+    
+    socket.join(topic);
     console.log(`User ${currentUserId} joined topic ${topic}`);
   });
   
 
   socket.on('send-message', (data) => {
-    const { text, senderId, recipientId } = data;
-    const topic = `/chat/${senderId}-${recipientId}`;
+    const { text, senderId, recipientId } = data; 
     console.log("message: ",text);
     console.log("sederId: ",senderId);
     console.log("recipientId: ",recipientId);  
-    
+    const participants = [senderId, recipientId].sort();
+    const topic = `/chat/${participants[0]}-${participants[1]}`;
     const clients = io.sockets.adapter.rooms.get(topic);
-    console.log("Clients in topic:", clients);
+    console.log("Clients in topic:", topic);
     // Emit the message only to the recipient
-    socket.to(topic).emit('receive-message', data);
+ socket.to(topic).emit('receive-message', data); 
+    
+    
     console.log("Message emitted to the recipient:", data);
   });
   

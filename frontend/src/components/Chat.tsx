@@ -1,5 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useRecoilState, useSetRecoilState } from 'recoil';
 import io from 'socket.io-client';
+import { messageState, onlineUserState, selectedUserState } from '../lib/atoms';
+import { RightSection } from './ScreenSections/MainScreen/RightSection';
+import { useRouteError } from 'react-router-dom';
+import { LeftSection } from './ScreenSections/MainScreen/LeftSection';
 
 const socket = io('http://localhost:3001'); // Replace with your backend URL
 
@@ -14,11 +19,18 @@ type Message = {
   recipientId: string;
 };
 
-const ChatApp = ({ currentUserId = localStorage.getItem('token') }: { currentUserId?: string | null }) => {
-  const [onlineUsers, setOnlineUsers] = useState<User[]>([]);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [messageText, setMessageText] = useState('');
+type ChatMessages = {
+  [chatId: string]: Message[];
+};
+const ChatApp = ({ currentUserId = localStorage.getItem('token') }: { currentUserId?: any | null }) => {
+  const [chatMessages, setChatMessages] = useState<ChatMessages>({});
+  const [onlineUsers, setOnlineUsers] = useRecoilState<User[]>(onlineUserState);
+  const [selectedUser, setSelectedUser] = useRecoilState<User | null>(selectedUserState);
+  const [messages, setMessages] = useRecoilState<Message[]>(messageState); 
+
+  const getChatId = (user1Id: string, user2Id: string) => {
+    return [user1Id, user2Id].sort().join('-');
+  };
 
   useEffect(() => {
     // Notify the server that this user is online
@@ -30,12 +42,12 @@ const ChatApp = ({ currentUserId = localStorage.getItem('token') }: { currentUse
       console.log("oline user");
       setOnlineUsers(users.filter((user) => user.id !== currentUserId));
     });
-
-    // Listen for incoming messages
-    console.log("recieving message: ");
     socket.on('receive-message', (data: Message) => {
-      console.log("received ");
-      setMessages((prevMessages) => [...prevMessages, data]);
+      const chatId = getChatId(data.senderId, data.recipientId)
+      setChatMessages(prevMessages => ({
+        ...prevMessages,
+        [chatId]: [...(prevMessages[chatId] || []), data]
+      }));
     });
 
     return () => {
@@ -43,45 +55,45 @@ const ChatApp = ({ currentUserId = localStorage.getItem('token') }: { currentUse
     };
   }, [currentUserId]);
 
-  const handleUserSelect = (user: User) => {
+  const handleUserSelect = (user:{name:string,id:string,socketId:string}) => {
+    console.log("clicked user");
+    
+    console.log(user);  
     setSelectedUser(user);
     // Subscribe to chat with the selected user
     socket.emit('subscribe-to-chat', user.id,currentUserId);
-  };
 
-  // Handle sending a message
-  const sendMessage = () => {
-    if (selectedUser && messageText.trim()) {
-       
-      const messageData = {
-        text: messageText,
-        senderId: currentUserId,
-        recipientId: selectedUser.id,
-      };
-
-      // Emit the message to the server
-      socket.emit('send-message', messageData);
-
-      // Update the local message list to show the sent message
-      setMessages((prevMessages) => [...prevMessages, messageData]);
-      
-      setMessageText(''); // Clear input
+    const chatId = getChatId(currentUserId, user.id);
+    if (!chatMessages[chatId]) {
+      setChatMessages(prev => ({
+        ...prev,
+        [chatId]: []
+      }));
     }
   };
 
+  const getCurrentChatMessages = () => {
+    if (!selectedUser) return [];
+    const chatId = getChatId(currentUserId, selectedUser.id);
+    return chatMessages[chatId] || [];
+  };
+
+ 
   return (
     <div>
      you are {localStorage.getItem('token')}
       <h1>Chat App</h1>
       <div style={{ display: 'flex' }}>
         {/* Online Users List */}
-        <div style={{ flex: 1, borderRight: '1px solid gray', padding: '10px' }}>
+        {/* <div style={{ flex: 1, borderRight: '1px solid gray', padding: '10px' }}>
           <h2>Online Users</h2>
           <ul>
             {onlineUsers.map((user) => (
              user.id != currentUserId &&   <li
                 key={user.id}
-                onClick={() => handleUserSelect(user)}
+                onClick={() =>{  
+                  handleUserSelect(user)
+                }}
                 style={{
                   cursor: 'pointer',
                   fontWeight: selectedUser?.id === user.id ? 'bold' : 'normal',
@@ -91,52 +103,16 @@ const ChatApp = ({ currentUserId = localStorage.getItem('token') }: { currentUse
               </li>
             ))}
           </ul>
-        </div>
+        </div> */}
 
         {/* Chat Window */}
-        <div style={{ flex: 3, padding: '10px' }}>
-          {selectedUser ? (
-            <>
-              <h2>Chat with {selectedUser.name}</h2>
-
-              {/* Messages Display */}
-              <div
-                style={{
-                  border: '1px solid gray',
-                  padding: '10px',
-                  height: '300px',
-                  overflowY: 'scroll',
-                  marginBottom: '10px',
-                }}
-              >
-                {messages 
-                  .map((msg, index) => (
-                    <div
-                      key={index}
-                      style={{
-                        textAlign: msg.senderId == currentUserId ? 'right' : 'left',
-                        marginBottom: '5px',
-                      }}
-                    >
-                      <strong>{msg.senderId === currentUserId ? 'You' : selectedUser.name}:</strong>{' '}
-                      {msg.text}
-                    </div>
-                  ))}
-              </div>
-
-              {/* Message Input */}
-              <input
-                type="text"
-                value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
-                placeholder="Type a message..."
-                style={{ width: '80%', marginRight: '10px' }}
-              />
-              <button onClick={sendMessage}>Send</button>
-            </>
-          ) : (
-            <h2>Select a user to chat with</h2>
-          )}
+        <div className=' flex w-10/12 '>
+        <div className=' w-1/3'>
+        <LeftSection currentUserId={currentUserId} onlineUsers={onlineUsers} handleUserSelect={handleUserSelect} selectedUser={selectedUser} />
+        </div>
+        <div className=' w-1/2 h-[400px]'>
+        <RightSection currentUserId={currentUserId} onlineUsers={onlineUsers} />
+        </div>
         </div>
       </div>
     </div>

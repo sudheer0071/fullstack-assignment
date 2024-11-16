@@ -6,9 +6,9 @@ import { selectedUserState } from "../../../lib/atoms";
 import axios from "axios";
 import io from 'socket.io-client'
 
-const socket = io('http://localhost:3001'); 
 
 interface onlineUsersProp{
+  socketId:string
   id: string;
   name: string; 
   img?:string |any, 
@@ -16,16 +16,16 @@ interface onlineUsersProp{
   time?:Date | any,
   pending?:string | any,
 }
- 
+
 type User = {
   id: string;
   name: string;
 };
 
 
-export const LeftSection = ({onlineUsers, currentUserId}:{onlineUsers:onlineUsersProp[], currentUserId:string}) => {
+export const LeftSection = ({onlineUsers, currentUserId, handleUserSelect, selectedUser}:{onlineUsers:onlineUsersProp[], currentUserId:string, handleUserSelect:any, selectedUser:any}) => {
   const [allUsers,setAllUsers] = useState<onlineUsersProp[]>([])
-
+  
   useEffect(()=>{
     const fetchAllUsers = async ()=>{
       const response = await axios.get('http://localhost:3001/users')
@@ -35,7 +35,7 @@ export const LeftSection = ({onlineUsers, currentUserId}:{onlineUsers:onlineUser
     fetchAllUsers()
   },[])
   
-
+  
   console.log("Online Users:", onlineUsers);
   const contacts = [
     {
@@ -108,7 +108,7 @@ export const LeftSection = ({onlineUsers, currentUserId}:{onlineUsers:onlineUser
       time: "Today, 3:35pm",
       pending: "5"
     }
-
+    
   ]
   
   return (
@@ -122,7 +122,9 @@ export const LeftSection = ({onlineUsers, currentUserId}:{onlineUsers:onlineUser
       <div className="relative flex-grow overflow-y-auto">
         <div className="flex flex-col space--4">
         {allUsers.map((contact) => (
-  <ContactCard
+          <ContactCard
+          handleUserSelect={handleUserSelect}
+          selectedUser={selectedUser}
     currentUserId={currentUserId}
     onlineusers={onlineUsers}
     key={contact.id} // Use a unique key for each item
@@ -132,15 +134,18 @@ export const LeftSection = ({onlineUsers, currentUserId}:{onlineUsers:onlineUser
     time={contact.time || ''}
     pending={contact.pending || '0'}
     img={contact.img || ''}
-  />
-))}
+    />
+  ))}
    </div>
       </div>
     </section>
   );
   
 }
-const ContactCard = ({
+const ContactCard = (
+  {
+  handleUserSelect,
+  selectedUser,
   currentUserId,
   onlineusers,
   id,
@@ -150,6 +155,8 @@ const ContactCard = ({
   time = '00:00',
   pending = '0',
 }: {
+  handleUserSelect:any,
+  selectedUser:any,
   currentUserId:string,
   onlineusers:onlineUsersProp[]
   id: string;
@@ -158,23 +165,28 @@ const ContactCard = ({
   message: string;
   time: string;
   pending: string;
-}) => {
-  const [selectedUser, setSelectedUser] = useRecoilState(selectedUserState);
+}) => { 
+  // const [selectedUser, setSelectedUser] = useRecoilState<User|null>(selectedUserState);
   
   
   const isOnline = onlineusers.some((onlineUser)=> onlineUser.id == id)
   
-  const handleUserClick = () => {
-    const currentUser = { name, id };  
-    socket.emit('subscribe-to-chat', id,currentUserId);
-
-    setSelectedUser(currentUser);  // Update the selected user state
+  const handleUserClick = (user:{name:string,id:string}) => {
+    console.log("clicked user");
+    const clickedUser = onlineusers.find((onlineUser) => onlineUser.id === id);
+    const userss = {
+      name:user.name,
+      id:user.id,
+      socketId:clickedUser?.socketId
+    } 
+    handleUserSelect(userss)
   };
+
 
   return ( currentUserId != id &&
     <div
-      onClick={handleUserClick}
-      className={`flex justify-between border-b-2 pb-2 w-full items-center hover:bg-purple-300 transition-all duration-300 cursor-pointer px-5 py-3 ${selectedUser.id == id?"  bg-purple-300":""} `}
+      onClick={()=>handleUserClick({name,id})}
+      className={`flex justify-between border-b-2 pb-2 w-full items-center hover:bg-purple-300 transition-all duration-300 cursor-pointer px-5 py-3 ${selectedUser?.id == id?"  bg-purple-300":""} `}
     >
       {/* User info rendering */}
       <div className="flex items-center gap-x-3 w-full">
